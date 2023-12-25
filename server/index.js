@@ -2,9 +2,13 @@ const express = require("express");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
+const cors = require('cors');
+
 
 const app = express();
+app.use(cors()); 
 app.use(express.json());
+
 const port = 3000;
 const SECRET = "dfsd2";
 
@@ -142,17 +146,15 @@ app.delete("/course/:courseID", authJwt, async (req, res) => {
   try {
     const course = await Course.findByIdAndDelete(req.params.courseID);
     if (course) {
-      res.json({ message: 'Course deleted successfully', course });
+      res.json({ message: "Course deleted successfully", course });
     } else {
-      res.status(404).json({ message: 'Course not found' });
+      res.status(404).json({ message: "Course not found" });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
-
-
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
