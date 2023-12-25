@@ -1,1 +1,1 @@
-# E-commerce-App
+# Course selling App
