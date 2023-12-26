@@ -22,7 +22,10 @@ function Signup() {
 
       // Process the response here, if needed
       const data = await response.json();
+      const token = data.token
+      console.log(token)
       console.log(data);
+      localStorage.setItem('token', token);
     } catch (error) {
       console.error('Error during signup:', error);
     }
@@ -30,7 +33,7 @@ function Signup() {
 
   return (
     <>
-    
+     
       <div style={{ marginTop: "50px" }}>
         <TextField
           id="outlined-basic"
