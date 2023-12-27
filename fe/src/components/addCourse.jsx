@@ -59,8 +59,8 @@ function Course() {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Course App
           </Typography>
-          <Button color="inherit" component={Link} to="/addcourse">
-           Add course
+          <Button color="inherit" component={Link} to="/courses">
+           course
           </Button>
           <Button color="inherit"  component={Link} to="/login" onClick={handleLogout}>
             Logout
