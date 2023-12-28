@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const cors = require('cors');
 
-
+//middlewares
 const app = express();
 app.use(cors()); 
 app.use(express.json());
@@ -17,7 +17,7 @@ const authJwt = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (authHeader) {
-    const token = authHeader.split(" ")[1]; // Use split(' ') to split by space
+    const token = authHeader.split(" ")[1]; 
     jwt.verify(token, SECRET, (err, decoded) => {
       if (err) {
         res.sendStatus(403);
@@ -112,6 +112,21 @@ app.post("/course", authJwt, async (req, res) => {
   const course = new Course(req.body);
   await course.save();
   res.json({ message: "course created successfully ", courseId: course.id });
+});
+app.get("/getcourse/:courseID", async (req, res) => {
+  try {
+    const courseId = req.params.courseID;
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.json({ course });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 });
 
 app.get("/getcourse", async (req, res) => {

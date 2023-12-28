@@ -24,11 +24,9 @@ function Login() {
       const data = await response.json();
       const token = data.token;
 
-      // Store the token in localStorage
       localStorage.setItem('token', token);
 
-      // Redirect to another page (e.g., home page) after successful login
-      navigate('/courses'); // Change '/addcourse' to the desired route
+      navigate('/courses'); 
     } catch (error) {
       console.error('Error during login:', error);
     }

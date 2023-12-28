@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
+import { useState } from "react";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import MenuIcon from "@mui/icons-material/Menu";
 
 function Course() {
   const [title, setTitle] = useState();
@@ -16,13 +16,13 @@ function Course() {
 
   const handleAddCourse = async () => {
     try {
-      const token = localStorage.getItem('token'); // Retrieve the token from local storage
+      const token = localStorage.getItem("token");
 
-      const response = await fetch('http://localhost:3000/course', {
-        method: 'POST',
+      const response = await fetch("http://localhost:3000/course", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Include the token in the Authorization header
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ title, description, price, image }),
       });
@@ -30,22 +30,19 @@ function Course() {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-
-      // Process the response here, if needed
       const data = await response.json();
       console.log(data);
     } catch (error) {
-      console.error('Error adding course:', error);
+      console.error("Error adding course:", error);
     }
   };
   const handleLogout = () => {
-    // Perform logout logic (clear token, etc.)
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
   };
 
   return (
     <>
-    <AppBar position="static">
+      <AppBar position="static">
         <Toolbar>
           <IconButton
             size="large"
@@ -60,13 +57,18 @@ function Course() {
             Course App
           </Typography>
           <Button color="inherit" component={Link} to="/courses">
-           course
+            course
           </Button>
-          <Button color="inherit"  component={Link} to="/login" onClick={handleLogout}>
+          <Button
+            color="inherit"
+            component={Link}
+            to="/login"
+            onClick={handleLogout}
+          >
             Logout
           </Button>
         </Toolbar>
-      </AppBar>  
+      </AppBar>
       <div style={{ marginTop: "50px" }}>
         <TextField
           id="outlined-basic"

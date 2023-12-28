@@ -1,7 +1,8 @@
+// Import statements at the top level
 import React, { useState, useEffect } from 'react';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import { useParams, Link, useHistory } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
@@ -10,19 +11,32 @@ import MenuIcon from '@mui/icons-material/Menu';
 
 function Updatec() {
   const { courseID } = useParams();
-  const history = useHistory();
+  const location = useLocation();
+  const navigate = useNavigate(); // Use useNavigate instead of useHistory
 
+  // Access the course state from location.state
+  const { course } = location.state || {};
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [image, setImage] = useState('');
 
   useEffect(() => {
+    // Set the initial values based on the course state
+    if (course) {
+      setTitle(course.title || '');
+      setDescription(course.description || '');
+      setPrice(course.price || '');
+      setImage(course.image || '');
+    }
+
     // Fetch the existing course data when the component mounts
     const fetchCourseData = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:3000/course/${courseID}`, {
+        const courseId = course ? course._id : courseID; // Use courseID if course is not available in state
+        console.log("Fetching course data for courseId:", courseId);
+        const response = await fetch(`http://localhost:3000/getcourse/${courseId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -35,17 +49,17 @@ function Updatec() {
         }
 
         const data = await response.json();
-        setTitle(data.title);
-        setDescription(data.description);
-        setPrice(data.price);
-        setImage(data.image);
+        setTitle(data.course.title);
+        setDescription(data.course.description);
+        setPrice(data.course.price);
+        setImage(data.course.image);
       } catch (error) {
         console.error('Error fetching course data:', error);
       }
     };
 
     fetchCourseData();
-  }, [courseID]);
+  }, [courseID, course]);
 
   const handleUpdateCourse = async () => {
     try {
@@ -66,6 +80,8 @@ function Updatec() {
 
       const updatedData = await response.json();
       console.log('Course updated successfully:', updatedData);
+
+      navigate('/courses');
     } catch (error) {
       console.error('Error updating course:', error);
     }

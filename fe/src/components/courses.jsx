@@ -12,42 +12,61 @@ import MenuIcon from "@mui/icons-material/Menu";
 
 export default function Courses() {
   const [courses, setCourses] = useState([]);
-  const bull = <span style={{ marginLeft: "5px", marginRight: "5px" }}>•</span>;
 
   const handleLogout = () => {
-    // Perform logout logic (clear token, etc.)
     localStorage.removeItem("token");
   };
 
-  useEffect(() => {
-    // Fetch data from the backend when the component mounts
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:3000/getcourse", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:3000/getcourse", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-
-        if (!Array.isArray(responseData.courses)) {
-          throw new Error("Invalid data structure: expected an array");
-        }
-
-        setCourses(responseData.courses);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
 
+      const responseData = await response.json();
+
+      if (!Array.isArray(responseData.courses)) {
+        throw new Error("Invalid data structure: expected an array");
+      }
+
+      setCourses(responseData.courses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
+  };
+
+  const Detele = async (courseId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:3000/course/${courseId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      console.log("Course deleted successfully:", responseData);
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting course:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
-  }, []); // The empty dependency array ensures that this effect runs only once on mount
+  }, []); 
 
   return (
     <>
@@ -82,7 +101,6 @@ export default function Courses() {
         {courses.map((course) => (
           <Card key={course.id} sx={{ minWidth: 275 }}>
             <CardContent>
-              {/* Use double curly braces or reference the variable directly */}
               <img src={course.image} alt="image" style={{ width: "275px" }} />
               <Typography variant="h5" component="div">
                 {course.title}
@@ -97,11 +115,15 @@ export default function Courses() {
                 size="small"
                 component={Link}
                 to={{
-                  pathname: "/updatecourse",
+                  pathname: `/updatecourse/${course._id}`,
                   state: { course },
                 }}
               >
-                update
+                Update
+              </Button>
+              {console.log(course)}
+              <Button size="small" onClick={() => Detele(course._id)}>
+                Delete
               </Button>
             </CardActions>
           </Card>
