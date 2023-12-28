@@ -4,7 +4,7 @@ import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
@@ -13,33 +13,37 @@ import MenuIcon from "@mui/icons-material/Menu";
 export default function Courses() {
   const [courses, setCourses] = useState([]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch("http://localhost:3000/getcourse", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+
+        if (!Array.isArray(responseData.courses)) {
+          throw new Error("Invalid data structure: expected an array");
+        }
+
+        setCourses(responseData.courses);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
+
+    fetchData();
+  }, []); 
+
   const handleLogout = () => {
     localStorage.removeItem("token");
-  };
-
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:3000/getcourse", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const responseData = await response.json();
-
-      if (!Array.isArray(responseData.courses)) {
-        throw new Error("Invalid data structure: expected an array");
-      }
-
-      setCourses(responseData.courses);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-    }
   };
 
   const Detele = async (courseId) => {
@@ -63,10 +67,6 @@ export default function Courses() {
       console.error("Error deleting course:", error);
     }
   };
-
-  useEffect(() => {
-    fetchData();
-  }, []); 
 
   return (
     <>
@@ -99,7 +99,7 @@ export default function Courses() {
       </AppBar>
       <div style={{ display: "flex" }}>
         {courses.map((course) => (
-          <Card key={course.id} sx={{ minWidth: 275 }}>
+          <Card key={course._id} sx={{ minWidth: 275 }}>
             <CardContent>
               <img src={course.image} alt="image" style={{ width: "275px" }} />
               <Typography variant="h5" component="div">
@@ -121,7 +121,6 @@ export default function Courses() {
               >
                 Update
               </Button>
-              {console.log(course)}
               <Button size="small" onClick={() => Detele(course._id)}>
                 Delete
               </Button>
