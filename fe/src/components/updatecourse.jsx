@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
@@ -13,7 +12,6 @@ function Updatec() {
   const { courseID } = useParams();
   const location = useLocation();
   const navigate = useNavigate(); 
-
 
   const { course } = location.state || {};
   const [title, setTitle] = useState('');
@@ -41,20 +39,42 @@ function Updatec() {
             'Authorization': `Bearer ${token}`,
           },
         });
-
+    
         if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          // Check if the response is valid JSON
+          try {
+            const errorData = await response.json();
+            throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorData.message}`);
+          } catch (jsonError) {
+            console.error('Error parsing error response as JSON:', jsonError);
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
         }
-
-        const data = await response.json();
-        setTitle(data.course.title);
-        setDescription(data.course.description);
-        setPrice(data.course.price);
-        setImage(data.course.image);
+    
+        // Check if the response is valid JSON
+        try {
+          const data = await response.json();
+          console.log("Fetched course data:", data.course);
+    
+          // Use try-catch to handle asynchronous state updates
+          try {
+            setTitle(data.course.title);
+            setDescription(data.course.description);
+            setPrice(data.course.price);
+            setImage(data.course.image);
+            console.log("State updated successfully");
+          } catch (error) {
+            console.error('Error updating state:', error);
+          }
+        } catch (jsonError) {
+          console.error('Error parsing response as JSON:', jsonError);
+          throw new Error('Invalid JSON response');
+        }
       } catch (error) {
         console.error('Error fetching course data:', error);
       }
     };
+    
 
     fetchCourseData();
   }, [courseID, course]);
@@ -73,7 +93,8 @@ function Updatec() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorData.message}`);
       }
 
       const updatedData = await response.json();

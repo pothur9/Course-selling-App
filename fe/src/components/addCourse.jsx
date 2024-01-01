@@ -1,18 +1,20 @@
 import { useState } from "react";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
+import { Link, useNavigate } from 'react-router-dom';
 
 function Course() {
-  const [title, setTitle] = useState();
-  const [description, setDescription] = useState();
-  const [price, setPrice] = useState();
-  const [image, setImage] = useState();
+  const navigate = useNavigate(); // Move it inside the component
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [image, setImage] = useState("");
 
   const handleAddCourse = async () => {
     try {
@@ -30,12 +32,17 @@ function Course() {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
+
       const data = await response.json();
-      console.log(data);
+      console.log("Course added successfully:", data);
+
+      // Use navigate to redirect to the "/addcourse" route
+      navigate('/courses');
     } catch (error) {
       console.error("Error adding course:", error);
     }
   };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
   };
@@ -74,33 +81,25 @@ function Course() {
           id="outlined-basic"
           label="Title"
           variant="outlined"
-          onChange={(e) => {
-            setTitle(e.target.value);
-          }}
+          onChange={(e) => setTitle(e.target.value)}
         />
         <TextField
           id="outlined-basic"
           label="Description"
           variant="outlined"
-          onChange={(e) => {
-            setDescription(e.target.value);
-          }}
+          onChange={(e) => setDescription(e.target.value)}
         />
         <TextField
           id="outlined-basic"
           label="Price"
           variant="outlined"
-          onChange={(e) => {
-            setPrice(e.target.value);
-          }}
+          onChange={(e) => setPrice(e.target.value)}
         />
         <TextField
           id="outlined-basic"
           label="Image"
           variant="outlined"
-          onChange={(e) => {
-            setImage(e.target.value);
-          }}
+          onChange={(e) => setImage(e.target.value)}
         />
       </div>
       <Button variant="contained" onClick={handleAddCourse}>

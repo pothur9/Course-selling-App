@@ -13,32 +13,32 @@ import MenuIcon from "@mui/icons-material/Menu";
 export default function Courses() {
   const [courses, setCourses] = useState([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:3000/getcourse", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:3000/getcourse", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const responseData = await response.json();
-
-        if (!Array.isArray(responseData.courses)) {
-          throw new Error("Invalid data structure: expected an array");
-        }
-
-        setCourses(responseData.courses);
-      } catch (error) {
-        console.error("Error fetching courses:", error);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
-    };
 
+      const responseData = await response.json();
+
+      if (!Array.isArray(responseData.courses)) {
+        throw new Error("Invalid data structure: expected an array");
+      }
+
+      setCourses(responseData.courses);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []); 
 
@@ -60,8 +60,9 @@ export default function Courses() {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const responseData = await response.json();
-      console.log("Course deleted successfully:", responseData);
+      console.log("Course deleted successfully");
+
+      // Call fetchData to refresh the course list
       fetchData();
     } catch (error) {
       console.error("Error deleting course:", error);

@@ -1,117 +1,178 @@
-import React, { useState, useEffect } from 'react';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import { Link } from 'react-router-dom';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
+const express = require("express");
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const cors = require('cors');
 
-function Courses() {
-  const [courses, setCourses] = useState([]);
 
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/getcourse', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+const app = express();
+app.use(cors()); 
+app.use(express.json());
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+const port = 3000;
+const SECRET = "dfsd2";
+
+//auth middlewar
+const authJwt = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader) {
+    const token = authHeader.split(" ")[1]; // Use split(' ') to split by space
+    jwt.verify(token, SECRET, (err, decoded) => {
+      if (err) {
+        res.sendStatus(403);
+      } else {
+        req.user = decoded; // Use the decoded argument
+        next();
       }
+    });
+  } else {
+    res.sendStatus(403);
+  }
+};
 
-      const responseData = await response.json();
-
-      if (!Array.isArray(responseData.courses)) {
-        throw new Error('Invalid data structure: expected an array');
-      }
-
-      setCourses(responseData.courses);
-    } catch (error) {
-      console.error('Error fetching courses:', error);
+//database
+mongoose
+  .connect(
+    "mongodb+srv://chowdaryp697:Prasanna@cluster0.pdtmjr8.mongodb.net/",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      dbName: "Ecom",
     }
-  };
+  )
+  .then(() => {
+    console.log(`Db connected successfully`);
+  })
+  .catch((error) => {
+    console.log(`Db connection failed`);
+    console.error(error);
+    process.exit(1);
+  });
 
-  useEffect(() => {
-    // Fetch data initially
-    fetchData();
+//data base schema
+const adminSchema = new mongoose.Schema({
+  username: String,
+  password: String,
+});
 
-    // Set up polling interval (e.g., every 5 seconds)
-    const intervalId = setInterval(() => {
-      fetchData();
-    }, 5000);
+const courseSchema = new mongoose.Schema({
+  title: String,
+  description: String,
+  price: Number,
+  image: String,
+});
 
-    // Clear interval on component unmount
-    return () => clearInterval(intervalId);
-  }, []); // Run useEffect only once on component mount
+const Admin = mongoose.model("Admin", adminSchema);
+const Course = mongoose.model("Course", courseSchema);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-  };
+app.post("/signup", async (req, res) => {
+  const { username, password } = req.body;
+  const admin = await Admin.findOne({ username });
 
-  return (
-    <>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Course App
-          </Typography>
-          <Button color="inherit" component={Link} to="/addcourse">
-            Add course
-          </Button>
-          <Button color="inherit" component={Link} to="/login" onClick={handleLogout}>
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
-      <div style={{ display: 'flex' }}>
-        {courses.map((course) => (
-          <Card key={course._id} sx={{ minWidth: 275 }}>
-            <CardContent>
-              <img src={course.image} alt="image" style={{ width: '275px' }} />
-              <Typography variant="h5" component="div">
-                {course.title}
-              </Typography>
-              <Typography sx={{ mb: 1.5 }} color="text.secondary">
-                Description: {course.description}
-              </Typography>
-              <Typography variant="body2">Price: {course.price}</Typography>
-            </CardContent>
-            <CardActions>
-              <Button
-                size="small"
-                component={Link}
-                to={{
-                  pathname: `/updatecourse/${course._id}`,
-                  state: { course },
-                }}
-              >
-                Update
-              </Button>
-              <Button size="small" onClick={() => Detele(course._id)}>
-                Delete
-              </Button>
-            </CardActions>
-          </Card>
-        ))}
-      </div>
-    </>
-  );
-}
+  if (admin) {
+    return res.status(403).json({ message: "admin already exists" });
+  }
 
-export default Courses;
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newAdmin = new Admin({ username, password: hashedPassword });
+    await newAdmin.save();
+    res.json({ message: "admin created successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+  const admin = await Admin.findOne({ username });
+
+  if (!admin) {
+    return res.status(403).json({ message: "invalid username or password" });
+  }
+  try {
+    const passwordMatch = await bcrypt.compare(password, admin.password);
+
+    if (passwordMatch) {
+      const token = jwt.sign({ username, role: "admin" }, SECRET, {
+        expiresIn: "1h",
+      });
+      res.json({ message: "login successfull", token });
+    } else {
+      res.status(500).json({ message: "invalid username or password" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+app.post("/course", authJwt, async (req, res) => {
+  const course = new Course(req.body);
+  await course.save();
+  res.json({ message: "course created successfully ", courseId: course.id });
+});
+
+app.get("/getcourse", async (req, res) => {
+  try {
+    const courses = await Course.find({});
+    res.json({ courses });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.put("/course/:courseID", authJwt, async (req, res) => {
+  try {
+    const course = await Course.findByIdAndUpdate(
+      req.params.courseID,
+      req.body,
+      { new: true }
+    );
+    if (course) {
+      res.json({ message: "Course updated", course });
+    } else {
+      res.status(404).json({ message: "Course not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+
+app.get("/getcourse/:courseID", async (req, res) => {
+  try {
+    const courseId = req.params.courseID;
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    res.json({ course });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.delete("/course/:courseID", authJwt, async (req, res) => {
+  try {
+    const course = await Course.findByIdAndDelete(req.params.courseID);
+    if (course) {
+      res.json({ message: "Course deleted successfully", course });
+    } else {
+      res.status(404).json({ message: "Course not found" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});

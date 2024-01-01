@@ -28,7 +28,7 @@ function Signup() {
       const data = await response.json();
       const token = data.token
       localStorage.setItem('token', token);
-      navigate('/courses'); 
+      navigate('/login'); 
     } catch (error) {
       console.error('Error during signup:', error);
     }
