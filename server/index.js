@@ -56,6 +56,11 @@ const adminSchema = new mongoose.Schema({
   password: String,
 });
 
+const userSchema = new mongoose.Schema({
+  username: String,
+  password: String,
+});
+
 const courseSchema = new mongoose.Schema({
   title: String,
   description: String,
@@ -63,8 +68,16 @@ const courseSchema = new mongoose.Schema({
   image: String,
 });
 
+const purchaseSchema = new mongoose.Schema({
+  userId: { type: String, required: true },
+  courseId: { type: String, required: true },
+});
+
 const Admin = mongoose.model("Admin", adminSchema);
 const Course = mongoose.model("Course", courseSchema);
+const User = mongoose.model("User", userSchema);
+const Purchase = mongoose.model('Purchase', purchaseSchema);
+
 
 app.post("/signup", async (req, res) => {
   const { username, password } = req.body;
@@ -172,6 +185,88 @@ app.delete("/course/:courseID", authJwt, async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
+
+
+//user
+
+app.post("/user/signup", async (req, res) => {
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+
+  if (user) {
+    return res.status(403).json({ message: "user already exists" });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ username, password: hashedPassword });
+    await newUser.save();
+    res.json({ message: "User created successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.post("/user/login", async (req, res) => {
+  const { username, password } = req.body;
+  const user = await User.findOne({ username });
+
+  if (!user) {
+    return res.status(403).json({ message: "invalid username or password" });
+  }
+  try {
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (passwordMatch) {
+      const token = jwt.sign({ username, role: "user" }, SECRET, {
+        expiresIn: "1h",
+      });
+      res.json({ message: "login successfull", token });
+    } else {
+      res.status(500).json({ message: "invalid username or password" });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+app.post('/purchasecourse/:courseId', authJwt, async (req, res) => {
+  try {
+    const userId = req.user.username; 
+
+
+    const existingPurchase = await Purchase.findOne({ userId, courseId: req.params.courseId });
+
+    if (existingPurchase) {
+      return res.status(400).json({ message: 'Course already purchased by the user' });
+    }
+
+
+    const newPurchase = new Purchase({ userId, courseId: req.params.courseId });
+    await newPurchase.save();
+
+    res.json({ message: 'Course purchased successfully' });
+  } catch (error) {
+    console.error('Error purchasing course:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+// Fetch purchased courses for a specific user
+app.get("/purchasedcourses/:userId",authJwt, async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const purchasedCourses = await Purchase.find({ userId }).populate('courseId');
+    res.json({ purchasedCourses });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
