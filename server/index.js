@@ -222,7 +222,7 @@ app.post("/user/login", async (req, res) => {
       const token = jwt.sign({ username, role: "user" }, SECRET, {
         expiresIn: "1h",
       });
-      res.json({ message: "login successfull", token });
+      res.json({ message: "login successfull", token,username });
     } else {
       res.status(500).json({ message: "invalid username or password" });
     }
